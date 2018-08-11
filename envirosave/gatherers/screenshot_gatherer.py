@@ -6,8 +6,19 @@ Author: csm10495
 Copyright: MIT License - 2018
 '''
 import mss
+import mss.screenshot
 
 from abstract_gatherer import AbstractGatherer
+
+class EnvirosaveScreenshot(mss.screenshot.ScreenShot):
+    '''
+    subclass of ScreenShot to add toEnvirosaveBinary function
+    '''
+    def toEnvirosaveBinary(self, f):
+        '''
+        saves this screenshot as a png file
+        '''
+        mss.tools.to_png(self.rgb, self.size, output=f + ".png")
 
 class ScreenshotGatherer(AbstractGatherer):
     '''
@@ -28,7 +39,10 @@ class ScreenshotGatherer(AbstractGatherer):
         return True if it worked and itemDict is being updated,
             otherwise return False
         '''
+            # if saving files... save this as a picture!
         with mss.mss() as sct: 
-            self.itemDict['Screenshot'] = sct.grab(sct.monitors[-1])
+            sct.cls_image = EnvirosaveScreenshot
+            screenshot = sct.grab(sct.monitors[0])
+            self.itemDict['Screenshot'] = screenshot
 
         return True

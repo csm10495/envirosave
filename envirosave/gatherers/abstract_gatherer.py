@@ -6,10 +6,14 @@ Author: csm10495
 Copyright: MIT License - 2018
 '''
 import datetime
+import os
+import pprint
 import threading
 import time
 import subprocess
 GATHERER_MAGIC = 'Gatherer Magic!' # set on all gatherers to know they are gatherers
+
+from six import iteritems, string_types
 
 class AbstractGatherer(object):
     '''
@@ -22,6 +26,21 @@ class AbstractGatherer(object):
         '''
         self.itemDict = {}
         self.threads = []
+        self.itemDictLock = threading.Lock()
+
+    def __getstate__(self):
+        '''
+        used for pickling
+        '''
+        d = self.__dict__
+        d['itemDictLock'] = None
+        return d
+
+    def __setstate__(self, d):
+        '''
+        used for pickling
+        '''
+        self.__dict__ = d
         self.itemDictLock = threading.Lock()
 
     def __getattribute__(self, name):
@@ -52,6 +71,27 @@ class AbstractGatherer(object):
                 f.write(s)
         else:
             print (s)
+
+    def parseToFolder(self, outDir):
+        '''
+        utility to turn itemDict into a folder of files per entry
+        '''
+        try:
+            os.makedirs(outDir)
+        except:
+            pass
+        
+        for key, value in iteritems(self.itemDict):
+            outFile = os.path.join(outDir, key.replace("/", "_").replace("\\", "_").replace(":", '_').replace("\"", "_").replace("*", "_"))
+            if hasattr(value, 'toEnvirosaveBinary'):
+                # Maybe we should save binary instead of text?
+                value.toEnvirosaveBinary(outFile)
+            else:
+                with open(outFile, 'w') as f:
+                    if isinstance(value, string_types):
+                        f.write(value)
+                    else:
+                        f.write(pprint.pformat(value, width=200))
 
     def __str__(self):
         '''

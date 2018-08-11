@@ -13,6 +13,7 @@ import sys
 import time
 import zlib
 
+from six import iteritems
 from six.moves import cPickle as pickle
 
 from gatherers.abstract_gatherer import AbstractGatherer, GATHERER_MAGIC
@@ -38,7 +39,7 @@ class Environment(object):
         '''
         retStr = ''
         for key, value in self.gatheredData.items():
-            retStr += '%-20s : \n  %s\n' % (key, pprint.pformat(value, width=200).replace('\n', '\n  ').rstrip(' '))
+            retStr += '%-20s : \n  %s\n' % (key, pprint.pformat(str(value), width=200).replace('\n', '\n  ').rstrip(' '))
 
         return retStr
 
@@ -52,6 +53,19 @@ class Environment(object):
                 f.write(s)
         else:
             print (s)
+
+    def parseToFolder(self, outDir):
+        '''
+        utility to turn gatheredData into a folder of files per entry
+        '''
+        try:
+            os.makedirs(outDir)
+        except:
+            pass
+        
+        for key, value in iteritems(self.gatheredData):
+            subDir = os.path.join(outDir, key)
+            value.parseToFolder(subDir)
 
     def _getAllValidGatherers(self):
         '''
@@ -91,7 +105,8 @@ class Environment(object):
             inst = i()
             if inst.gather():
                 assert len(inst.threads) == 0, "Gatherer (%s) did not complete spawned threads!" % type(inst)
-                ret[i.__name__] = inst.itemDict
+                #ret[i.__name__] = inst.itemDict
+                ret[i.__name__] = inst # save the gatherer
 
         self.gatheredData = ret
         return ret
@@ -112,17 +127,6 @@ class Environment(object):
         p = zlib.decompress(data)
         return pickle.loads(p)
 
-
-def getNestedKeys(d):
-    '''
-    Helper to get a dict->list of keys from a dict->dict
-    '''
-    nestedKeys = {}
-    for k, v in d.items():
-        nestedKeys[k] = list(v.keys())
-
-    return nestedKeys
-
 if __name__ == '__main__':
     
     start = time.time()
@@ -139,9 +143,6 @@ if __name__ == '__main__':
     p = e.save()
     end = time.time()
     print ("Time to pickle the gathered info():  %.5f seconds" % (end - start))
-
-    n = getNestedKeys(g)
-    print ("Gathered Keys: \n%s" % pprint.pformat(n))
 
     d = e.save()
     e2 = Environment.load(d)
