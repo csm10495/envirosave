@@ -1,0 +1,14 @@
+{
+    "psi-header.templates": [
+        {
+            "language": "*",
+            "template": [
+                "File: <<filename>>",
+                "Project: Envirosave: A simple attempt at saving a lot of",
+                "  information about the execution environment at a given point",
+                "Author: <<author>>",
+                "Copyright: MIT License - <<year>>"
+            ]
+        }
+    ]
+}
